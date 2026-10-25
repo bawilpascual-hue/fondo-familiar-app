@@ -2,13 +2,13 @@
 // de la actualización automática. IMPORTANTE: cada vez que se publique un cambio hay que subir VERSION (abajo);
 // así a todos les sale «Hay una versión nueva» y con un toque se actualiza.
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const CACHE = "fondo-familiar-" + VERSION;
 const EXTERNO = "fondo-familiar-externo";
 const ARCHIVOS = [
   "./", "index.html", "estilos.css", "manifest.webmanifest",
   "js/principal.js", "js/calendario.js", "js/cuentas.js", "js/textos.js", "js/licencia.js", "js/claves.js", "js/publicidad.js",
-  "js/avisos.js", "js/fotos.js", "js/datos.js", "js/nube.js", "js/config.js", "js/whatsapp.js", "js/creador.js",
+  "js/avisos.js", "js/fotos.js", "js/datos.js", "js/nube.js", "js/config.js", "js/whatsapp.js", "js/creador.js", "js/nube-firebase.js",
   "iconos/icono-192.png", "iconos/icono-512.png", "iconos/icono-180.png", "iconos/icono-maskable-512.png", "iconos/bawil_letras.png",
 ];
 
@@ -37,7 +37,8 @@ self.addEventListener("fetch", (e) => {
   // la lista de anuncios la maneja la página (guarda su copia); las imágenes de los anuncios y las letras: de internet
   // y, sin señal, la última copia
   if (url.pathname.endsWith("publicidad.json")) return;
-  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com" || url.hostname === "raw.githubusercontent.com") {
+  // también los archivos de Firebase (www.gstatic.com), para que el programa abra sin señal
+  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com" || url.hostname === "raw.githubusercontent.com" || url.hostname === "www.gstatic.com") {
     e.respondWith(caches.open(EXTERNO).then((c) => fetch(r).then((resp) => { if (resp.ok || resp.type === "opaque") c.put(r, resp.clone()); return resp; })
       .catch(() => c.match(r).then((x) => x || Response.error()))));
   }

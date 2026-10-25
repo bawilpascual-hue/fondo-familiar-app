@@ -19,7 +19,7 @@ const hoy = () => cal.hoyISO();
 const COLORES = ["#b4432a", "#1f7a5c", "#6b4fa0", "#c47a1b", "#2b6ea3", "#8a5a3c", "#3f7f6e", "#9a3b6e"];
 const SESION = "ff-sesion";
 
-let almacen, sinc, sesion = null, licenciaOk = false;
+let almacen, sinc, nube = null, sesion = null, licenciaOk = false;
 let vista = "cargando", volverA = "inicio", actual = null, movActual = null;
 let pagoN = 1, pagoFoto = "", salidaFoto = "", nuevoFoto = null, editando = null, verBajas = false;
 let pagosConocidos = new Set();
@@ -47,6 +47,35 @@ const movs = () => almacen.movimientos;
 const miembrosActivos = () => ct.activos(almacen.miembros);
 const esPersonal = () => sesion && sesion.rol !== "miembro";
 const nombrePeriodo = (n = 1) => cal.nombrePeriodo(A(), n);
+
+// ---------- la nube (Firebase)
+const conNube = () => !!nube;
+const enLinea = () => navigator.onLine !== false;
+/** Firebase pide contraseñas de al menos 6; sin nube bastan 4. */
+const minimo = () => (conNube() ? 6 : 4);
+/** El papel en la nube de quien entra: los miembros comparten la cuenta «miembros». */
+const PAPEL_NUBE = { encargada: "encargada", suplente: "suplente", miembro: "miembros" };
+function mensajeNube(e) {
+  const c = e && e.code;
+  if (c === "clave") return "Esa contraseña no es. Pruébala otra vez.";
+  if (c === "ya-existe") return "Ese fondo ya está en la nube.";
+  if (c === "sin-internet") return "No hay internet ahora. Prueba cuando tengas señal.";
+  if (c === "debil") return "La contraseña tiene que tener al menos 6 letras o números.";
+  if (c === "muchos") return "Se probó muchas veces seguidas. Espera unos minutos y prueba otra vez.";
+  return "No se pudo conectar con la nube (" + ((e && (e.original || e.message)) || "error") + ").";
+}
+/** Crea las cuentas del fondo en la nube (la de los miembros y la de la encargada, que queda dentro en este aparato). */
+async function crearFondoEnNube(claveEncargada, claveMiembros) {
+  const cod = A().licencia.codigo;
+  await nube.crearCuenta(cod, "miembros", claveMiembros);
+  await nube.crearCuenta(cod, "encargada", claveEncargada, { sesion: true });
+}
+/** El mensaje para invitar a otro celular al fondo. */
+function invitacion() {
+  return "Para ver el " + (A().nombre || "Fondo Familiar") + " en tu celular:\n1. Abre " + location.origin + location.pathname +
+    "\n2. Toca «¿El fondo ya existe en otro celular?»\n3. Código del fondo: " + A().licencia.codigo +
+    "\n4. Escoge «Soy miembro» y escribe la contraseña de los miembros (te la digo aparte).\nDespués pon el icono en la pantalla para abrirlo directo.";
+}
 
 function quienSoy() {
   if (!sesion) return "";
@@ -86,7 +115,7 @@ function ponerWa(id, tel, t) { $(id).href = enlaceWhatsApp(tel, t); }
 
 const PESTANA = { inicio: "inicio", recordar: "inicio", pago: "inicio", salida: "inicio", miembros: "miembros", ficha: "miembros", nuevo: "miembros", prestamo: "miembros",
   historial: "historial", movimiento: "historial", ajustes: "ajustes", avisos: "ajustes", resumen: "ajustes" };
-const SIN_SESION = ["cargando", "activar", "primera", "entrar"];
+const SIN_SESION = ["cargando", "activar", "unirse", "primera", "entrar"];
 const VISTAS = [...document.querySelectorAll(".vista")].map((x) => x.id.slice(2));
 
 function ir(v, { desde } = {}) {
@@ -108,7 +137,7 @@ function ir(v, { desde } = {}) {
 /** Vuelve a pintar la pantalla que está a la vista (cuando cambian los datos). «nueva» = recién se entró a ella. */
 function pintar(v = vista, nueva = false) {
   const p = {
-    activar: pintarActivar, primera: () => {}, entrar: pintarEntrar, inicio: pintarInicio, recordar: pintarRecordar,
+    activar: pintarActivar, unirse: () => {}, primera: pintarPrimera, entrar: pintarEntrar, inicio: pintarInicio, recordar: pintarRecordar,
     miembros: pintarMiembros, ficha: pintarFicha, historial: pintarHistorial, movimiento: nueva ? () => { $("mv-aviso").hidden = true; pintarMovimiento(); } : pintarMovimiento,
     ajustes: nueva ? pintarAjustes : pintarDatos, avisos: pintarAvisos, resumen: nueva ? prepararResumen : pintarResumen,
     pago: nueva ? () => {} : pintarPago, salida: pintarHaySalida, nuevo: () => {}, prestamo: nueva ? prepararPrestamo : () => {},
@@ -140,7 +169,15 @@ async function arrancar() {
     vaciar($("v-cargando").querySelector(".cuerpo"), h("div", { className: "aviso mal" }, "No se pudo abrir el lugar donde se guardan los datos en este aparato (" + (e.message || e) + "). Si es una ventana privada (incógnito), ábrelo en una ventana normal."));
     return;
   }
-  sinc = crearSincronizador(almacen, await adaptadorConfigurado().catch(() => null));
+  // la nube se carga de internet: si tarda mucho (señal mala), el programa abre igual con lo del aparato y la
+  // nube se conecta cuando termine de llegar
+  const cargandoNube = adaptadorConfigurado().catch((e) => { console.warn("Sin nube por ahora:", e); return null; });
+  nube = await Promise.race([cargandoNube, new Promise((ok) => setTimeout(() => ok(undefined), 6000))]);
+  if (nube === undefined) {
+    nube = null;
+    cargandoNube.then((a) => { if (a) { nube = a; sinc = crearSincronizador(almacen, nube, undefined, pintarInternet); sinc.sincronizar(); pintar(); } });
+  }
+  sinc = crearSincronizador(almacen, nube, undefined, pintarInternet);
   pagosConocidos = new Set(movs().filter((x) => x.tipo === "pago").map((x) => x.id));
   almacen.alCambiar((origen) => { if (origen === "nube") entroDinero(); pintar(); pintarInternet(); });
 
@@ -216,7 +253,41 @@ function pintarActivar() {
   const cod = A().licencia ? A().licencia.codigo : "";
   texto("l-codigo", cod);
   $("l-wa").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(tx.pedirClave(cod, A().nombre));
+  $("l-unirse").hidden = !conNube();
 }
+$("l-unirse").addEventListener("click", () => ir("unirse"));
+
+// ---------- ENTRAR A UN FONDO QUE YA ESTÁ EN LA NUBE (otro celular)
+
+$("u-entrar").addEventListener("click", async () => {
+  const cod = $("u-codigo").value.trim(), rol = $("u-quien").value, clave = $("u-clave").value;
+  if (lic.nucleoCodigo(cod).length !== 12) { avisoEn("u-aviso", "El código del fondo es como FF-7K2M-9Q4D-X81B. Pídeselo a la encargada (está en su celular, en Ajustes).", "aviso mal"); return; }
+  if (!clave) { avisoEn("u-aviso", "Escribe la contraseña.", "aviso mal"); return; }
+  if (!enLinea()) { avisoEn("u-aviso", mensajeNube({ code: "sin-internet" }), "aviso mal"); return; }
+  $("u-entrar").disabled = true;
+  avisoEn("u-aviso", "Entrando y bajando los datos del fondo…");
+  try {
+    await nube.entrar(cod, PAPEL_NUBE[rol], clave);
+    await almacen.reiniciar();
+    fotosCache.clear();
+    const r = await sinc.sincronizar();
+    if (r.error) throw Object.assign(new Error(r.error), { code: r.error });
+    pagosConocidos = new Set(movs().filter((x) => x.tipo === "pago").map((x) => x.id));
+    if (!A().licencia || !A().claves) { avisoEn("u-aviso", "Entró, pero ese fondo todavía no tiene datos en la nube. La encargada tiene que abrir el programa una vez con internet.", "aviso mal"); return; }
+    licenciaOk = await lic.valida(A().licencia.codigo, A().licencia.clave || "");
+    $("u-clave").value = ""; $("u-codigo").value = "";
+    if (!licenciaOk) { ir("activar"); return; }
+    if (rol === "miembro") {
+      ir("entrar");
+      const primero = miembrosActivos()[0];
+      if (primero) $("e-quien").value = "m:" + primero.id;
+      $("e-clave").value = clave;
+      avisoEn("e-aviso", "✓ Ya están los datos del fondo en este celular. Escoge tu nombre y toca «Entrar».", "aviso ok");
+    } else entrarComo({ rol });
+  } catch (e) {
+    avisoEn("u-aviso", mensajeNube(e), "aviso mal");
+  } finally { $("u-entrar").disabled = false; }
+});
 $("l-copiar").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("l-codigo").textContent); texto("l-copiar", "Copiado ✓"); }
   catch { texto("l-copiar", "Mantén el dedo sobre el código para copiarlo"); }
@@ -240,12 +311,28 @@ $("l-copia").addEventListener("click", recuperarCopia);
 
 // ---------- PRIMERA VEZ
 
+function pintarPrimera() {
+  texto("pv-ayuda", "Al menos " + minimo() + " letras o números. Con esta se anota y se cambia todo.");
+  $("pv-nube").hidden = !conNube();
+}
+
 $("pv-guardar").addEventListener("click", async () => {
   const enc = $("pv-encargada").value.trim(), c1 = $("pv-clave").value, cm = $("pv-clave-m").value;
   if (!enc) { avisoEn("pv-aviso", "Escribe el nombre de la encargada.", "aviso mal"); return; }
-  if (!claves.sirve(c1) || !claves.sirve(cm)) { avisoEn("pv-aviso", "Las contraseñas tienen que tener al menos 4 letras o números.", "aviso mal"); return; }
+  if (!claves.sirve(c1, minimo()) || !claves.sirve(cm, minimo())) { avisoEn("pv-aviso", "Las contraseñas tienen que tener al menos " + minimo() + " letras o números.", "aviso mal"); return; }
   if (c1 === cm) { avisoEn("pv-aviso", "La de los miembros tiene que ser distinta a la de la encargada (si no, todos podrían anotar).", "aviso mal"); return; }
+  if (conNube()) {
+    if (!enLinea()) { avisoEn("pv-aviso", "Hace falta internet esta vez: así se crea el fondo en la nube para que los demás lo vean. Prueba cuando tengas señal.", "aviso mal"); return; }
+    $("pv-guardar").disabled = true;
+    avisoEn("pv-aviso", "Creando el fondo en la nube…");
+    try { await crearFondoEnNube(c1, cm); }
+    catch (e) {
+      avisoEn("pv-aviso", e.code === "ya-existe" ? "Este fondo ya está en la nube con otras contraseñas. Si ya lo tenías en otro celular, vuelve atrás y entra con «¿El fondo ya existe en otro celular?»." : mensajeNube(e), "aviso mal");
+      return;
+    } finally { $("pv-guardar").disabled = false; }
+  }
   await almacen.cambiarAjustes({
+    nube: conNube() ? { desde: hoy() } : null,
     nombre: $("pv-nombre").value.trim() || "Fondo Familiar", encargada: enc, cuota: tx.leerMonto($("pv-cuota").value) || 500,
     frecuencia: "quincenal", dias: [15, 30], tope: 5000, reglaMas: "avisar", cierre: "si", siguienteRecibo: 1001,
     claves: { encargada: await claves.nueva(c1), miembros: await claves.nueva(cm), suplente: null },
@@ -270,7 +357,17 @@ async function entrar() {
   if (!clave) { avisoEn("e-aviso", "Escribe la contraseña."); return; }
   const rol = quien.startsWith("m:") ? "miembro" : quien;
   const guardada = rol === "miembro" ? c.miembros : c[rol];
-  if (!(await claves.coincide(clave, guardada))) { avisoEn("e-aviso", "Esa contraseña no es. Pruébala otra vez.", "aviso mal"); return; }
+  // con la nube, la que vale es la de la nube (por si se cambió en otro celular); sin señal, la guardada aquí
+  let ok = false, porNube = false;
+  if (conNube() && A().nube && enLinea()) {
+    $("e-entrar").disabled = true;
+    try { await nube.entrar(A().licencia.codigo, PAPEL_NUBE[rol], clave); ok = porNube = true; }
+    catch (e) { if (e.code === "clave" || e.code === "muchos") { avisoEn("e-aviso", mensajeNube(e), "aviso mal"); return; } }
+    finally { $("e-entrar").disabled = false; }
+  }
+  if (!ok) ok = await claves.coincide(clave, guardada);
+  if (!ok) { avisoEn("e-aviso", "Esa contraseña no es. Pruébala otra vez.", "aviso mal"); return; }
+  if (porNube) sinc.sincronizar();
   $("e-clave").value = "";
   avisoEn("e-aviso", "La encargada entra con su contraseña y puede todo. Un miembro entra con la contraseña de los miembros y solo ve lo suyo.");
   entrarComo(rol === "miembro" ? { rol, miembro: quien.slice(2) } : { rol });
@@ -741,15 +838,68 @@ function pintarAjustes() {
   $("a-aviso").hidden = true;
   // solo la encargada cambia las contraseñas de la encargada
   $("a-clave").disabled = sesion.rol !== "encargada";
+  // con la nube, para cambiar una contraseña hace falta la actual (sale al escribir la nueva)
+  for (const id of ["a-actual", "a-actual-s", "a-actual-m"]) $(id).value = "";
+  pintarActuales();
+  estadoNube = "";
   pintarDatos();
 }
+function pintarActuales() {
+  document.querySelectorAll("[data-actual]").forEach((x) => { x.hidden = !(conNube() && A().nube && $(x.dataset.actual).value); });
+}
+["a-clave", "a-clave-s", "a-clave-m"].forEach((id) => $(id).addEventListener("input", pintarActuales));
+
+let estadoNube = "";
 function pintarDatos() {
   const a = A();
   texto("a-licencia", "Código " + (a.licencia ? a.licencia.codigo : "") + (a.licencia && a.licencia.fecha ? " · clave puesta el " + a.licencia.fecha.split("-").reverse().join("/") : ""));
-  texto("a-datos", sinc && sinc.conectado
-    ? "Conectado a la nube: todos ven lo mismo." + (almacen.pendientes ? " Hay " + almacen.pendientes + " cambio(s) esperando señal para subir." : " Todo está subido.")
-    : "Por ahora los datos se guardan solo en este aparato (falta conectar la nube para que los vean los demás). Guarda una copia de vez en cuando: si se borra el navegador o se pierde el celular, con la copia se recupera todo.");
+  const pend = almacen.pendientes;
+  texto("a-datos", !conNube()
+    ? "Por ahora los datos se guardan solo en este aparato. Guarda una copia de vez en cuando: si se borra el navegador o se pierde el celular, con la copia se recupera todo."
+    : !a.nube ? "Este fondo todavía está solo en este aparato. Súbelo a la nube para que la suplente y los miembros lo vean en sus celulares."
+      : "Conectado a la nube: todos ven lo mismo." + (pend ? " Hay " + pend + " cambio" + (pend === 1 ? "" : "s") + " esperando señal para subir." : " Todo está subido."));
+  // la parte de la nube se arma solo cuando cambia (para no borrar lo que se está escribiendo)
+  const ahora = conNube() + "|" + !!a.nube + "|" + (a.licencia && a.licencia.codigo);
+  if (ahora !== estadoNube) {
+    estadoNube = ahora;
+    vaciar($("a-nube"), !conNube() ? null : a.nube ? partesNubeConectada() : partesSubirANube());
+  }
   pintarInstalar();
+}
+function partesNubeConectada() {
+  return [
+    h("div", { className: "tarjeta fina" }, h("div", { className: "gris", style: { fontSize: "13px" } }, "Código del fondo (para entrar en otro celular)"), h("div", { className: "codigo" }, A().licencia.codigo)),
+    h("a", { className: "boton wa chico", target: "_blank", rel: "noopener", href: enlaceWhatsApp("", invitacion()) }, "Invitar a los miembros por WhatsApp"),
+    h("div", { className: "gris", style: { fontSize: "12.5px" } }, "En otro celular: abrir el programa → «¿El fondo ya existe en otro celular?» → este código y la contraseña. La contraseña de los miembros dísela aparte."),
+  ];
+}
+function partesSubirANube() {
+  const c1 = h("input", { type: "password", id: "an-clave", autocomplete: "current-password" });
+  const cm = h("input", { type: "password", id: "an-clave-m", autocomplete: "off" });
+  const aviso = h("div", { className: "aviso", hidden: true });
+  const boton = h("button", { type: "button", className: "boton chico", onclick: async () => {
+    const a = A(), k = a.claves || {};
+    const mal = (t) => { aviso.className = "aviso mal"; aviso.textContent = t; aviso.hidden = false; };
+    if (!(await claves.coincide(c1.value, k.encargada))) return mal("La contraseña de la encargada no es.");
+    if (!(await claves.coincide(cm.value, k.miembros))) return mal("La contraseña de los miembros no es.");
+    if (!claves.sirve(c1.value, 6) || !claves.sirve(cm.value, 6)) return mal("La nube pide contraseñas de al menos 6 letras o números: cámbialas primero arriba (en «Contraseñas para entrar») y vuelve a tocar aquí.");
+    if (!enLinea()) return mal(mensajeNube({ code: "sin-internet" }));
+    boton.disabled = true; aviso.className = "aviso"; aviso.textContent = "Subiendo el fondo a la nube…"; aviso.hidden = false;
+    try {
+      await crearFondoEnNube(c1.value, cm.value);
+      await almacen.cambiarAjustes({ nube: { desde: hoy() } });
+      const r = await sinc.sincronizar();
+      aviso.className = "aviso ok";
+      aviso.textContent = "✓ El fondo está en la nube" + (r.subidos ? " (" + r.subidos + " cosas subidas)" : "") + "." +
+        (k.suplente && a.suplente ? " A la suplente vuelve a ponerle su contraseña arriba y guarda, para que pueda entrar desde la nube." : "");
+    } catch (e) { mal(e.code === "ya-existe" ? "Ya hay un fondo en la nube con este código y otras contraseñas." : mensajeNube(e)); }
+    finally { boton.disabled = false; }
+  } }, "Subir este fondo a la nube");
+  return [
+    h("div", { className: "campo" }, h("label", { htmlFor: "an-clave" }, "Contraseña de la encargada"), c1),
+    h("div", { className: "campo" }, h("label", { htmlFor: "an-clave-m" }, "Contraseña de los miembros"), cm),
+    boton, aviso,
+  ];
 }
 $("a-frecuencia").addEventListener("change", pintarFrecuencia);
 $("a-guardar").addEventListener("click", async () => {
@@ -762,10 +912,36 @@ $("a-guardar").addEventListener("click", async () => {
   };
   if (cambios.frecuencia === "quincenal" && cambios.dias[0] === cambios.dias[1]) { avisoEn("a-aviso", "Los dos días de pago tienen que ser distintos.", "aviso mal"); return; }
   const c = { ...(a.claves || {}) }, c1 = $("a-clave").value, cs = $("a-clave-s").value, cm = $("a-clave-m").value;
-  for (const v of [c1, cs, cm]) if (v && !claves.sirve(v)) { avisoEn("a-aviso", "Las contraseñas tienen que tener al menos 4 letras o números.", "aviso mal"); return; }
-  if (c1) c.encargada = await claves.nueva(c1);
-  if (cs) c.suplente = await claves.nueva(cs);
-  if (cm) c.miembros = await claves.nueva(cm);
+  for (const v of [c1, cs, cm]) if (v && !claves.sirve(v, minimo())) { avisoEn("a-aviso", "Las contraseñas tienen que tener al menos " + minimo() + " letras o números.", "aviso mal"); return; }
+  if (cs && !cambios.suplente) { avisoEn("a-aviso", "Escribe el nombre de la suplente.", "aviso mal"); return; }
+  if ((c1 || cs || cm) && conNube() && a.nube) {
+    // en la nube se cambian primero; lo que salga bien se guarda aunque lo siguiente falle
+    if (!enLinea()) { avisoEn("a-aviso", "Para cambiar contraseñas hace falta internet (se cambian también en la nube).", "aviso mal"); return; }
+    const cod = a.licencia.codigo;
+    $("a-guardar").disabled = true;
+    try {
+      if (c1) { await nube.cambiarClave(cod, "encargada", $("a-actual").value, c1); c.encargada = await claves.nueva(c1); }
+      if (cs) {
+        try { await nube.crearCuenta(cod, "suplente", cs); }
+        catch (e) {
+          if (e.code !== "ya-existe") throw e;
+          if (!$("a-actual-s").value) throw Object.assign(new Error(), { code: "falta-suplente" });
+          await nube.cambiarClave(cod, "suplente", $("a-actual-s").value, cs);
+        }
+        c.suplente = await claves.nueva(cs);
+      }
+      if (cm) { await nube.cambiarClave(cod, "miembros", $("a-actual-m").value, cm); c.miembros = await claves.nueva(cm); }
+    } catch (e) {
+      await almacen.cambiarAjustes({ claves: c }); sinc.sincronizar();
+      avisoEn("a-aviso", e.code === "falta-suplente" ? "Ya hubo una suplente con otra contraseña: escribe esa contraseña en «Contraseña actual de la suplente»."
+        : e.code === "clave" ? "La contraseña actual que escribiste no es. No se cambió." : mensajeNube(e), "aviso mal");
+      return;
+    } finally { $("a-guardar").disabled = false; }
+  } else {
+    if (c1) c.encargada = await claves.nueva(c1);
+    if (cs) c.suplente = await claves.nueva(cs);
+    if (cm) c.miembros = await claves.nueva(cm);
+  }
   if (cambios.suplente && !c.suplente) { avisoEn("a-aviso", "Ponle una contraseña a la suplente.", "aviso mal"); return; }
   if (!cambios.suplente) c.suplente = null;
   const cambioDias = cambios.frecuencia !== cal.reglas(a).frecuencia || String(cambios.dias) !== String(cal.reglas(a).dias);

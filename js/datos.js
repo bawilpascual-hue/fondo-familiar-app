@@ -141,6 +141,12 @@ export function crearAlmacen(guardado) {
       for (const c of COLECCIONES) res[c] = await guardado.todos(c);
       return res;
     },
+    /** Deja el aparato vacío (para entrar a un fondo que ya está en la nube y bajarlo completo). */
+    async reiniciar() {
+      await guardado.borrarTodo();
+      await cargar();
+      avisar("copia");
+    },
     /** Recupera una copia de respaldo (lo que hay se reemplaza). */
     async recuperar(copia) {
       if (!copia || copia.programa !== "Fondo Familiar") throw new Error("Ese archivo no es una copia del Fondo Familiar.");

@@ -44,7 +44,22 @@
         <div class="campo"><label for="l-clave">Clave de activación</label><input id="l-clave" placeholder="Pega aquí la clave que te mandó BAWIL" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
         <button type="button" class="boton" id="l-activar">Activar</button>
         <div class="aviso" id="l-aviso">Sin la clave el programa no abre. La clave sirve solo para este fondo (este código), como en ARQUEO sirve solo para esa computadora.</div>
+        <button type="button" class="boton sec" id="l-unirse" hidden>¿El fondo ya existe en otro celular? Entrar con el código del fondo</button>
         <button type="button" class="boton sec chico" id="l-copia">¿Ya tenías el fondo en otro aparato? Recuperar una copia</button>
+        <p class="firma" data-firma></p>
+      </div>
+    </section>
+
+    <!-- ENTRAR A UN FONDO QUE YA ESTÁ EN LA NUBE (otro celular) -->
+    <section class="vista" id="v-unirse" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="activar" aria-label="Volver">‹</button><h2 class="chico">Entrar a un fondo que ya existe</h2></div>
+      <div class="cuerpo">
+        <p style="margin:0;font-size:14px">Para ver en este celular el fondo que la encargada ya tiene. El código del fondo está en el celular de la encargada, en Ajustes.</p>
+        <div class="campo"><label for="u-codigo">Código del fondo</label><input id="u-codigo" placeholder="FF-7K2M-9Q4D-X81B" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+        <div class="campo"><label for="u-quien">¿Quién eres?</label><select id="u-quien"><option value="miembro">Soy miembro (solo miro lo mío)</option><option value="encargada">Soy la encargada</option><option value="suplente">Soy la suplente</option></select></div>
+        <div class="campo"><label for="u-clave">Contraseña</label><input id="u-clave" type="password" autocomplete="current-password"><span class="ayuda">Los miembros usan la contraseña de los miembros.</span></div>
+        <button type="button" class="boton" id="u-entrar">Entrar y bajar los datos</button>
+        <div class="aviso" id="u-aviso">Hace falta internet. Lo que haya en este celular del Fondo Familiar se cambia por los datos del fondo.</div>
         <p class="firma" data-firma></p>
       </div>
     </section>
@@ -56,9 +71,10 @@
         <div class="aviso">✓ Activado. Ahora pon las contraseñas para entrar. Después se pueden cambiar en Ajustes.</div>
         <div class="campo"><label for="pv-nombre">Nombre del fondo</label><input id="pv-nombre" value="Fondo Familiar"></div>
         <div class="campo"><label for="pv-encargada">Nombre de la encargada</label><input id="pv-encargada" placeholder="Ejemplo: Yokasta" autocomplete="off"></div>
-        <div class="campo"><label for="pv-clave">Contraseña de la encargada</label><input id="pv-clave" type="password" autocomplete="new-password"><span class="ayuda">Al menos 4 letras o números. Con esta se anota y se cambia todo.</span></div>
+        <div class="campo"><label for="pv-clave">Contraseña de la encargada</label><input id="pv-clave" type="password" autocomplete="new-password"><span class="ayuda" id="pv-ayuda">Al menos 4 letras o números. Con esta se anota y se cambia todo.</span></div>
         <div class="campo"><label for="pv-clave-m">Contraseña de los miembros (para ver lo suyo)</label><input id="pv-clave-m" type="password" autocomplete="new-password"></div>
         <div class="campo"><label for="pv-cuota">Cuota por quincena</label><input id="pv-cuota" value="500" inputmode="numeric"></div>
+        <div class="aviso" id="pv-nube" hidden>Hace falta internet esta vez: el fondo se crea en la nube para que la suplente y los miembros lo vean en sus celulares.</div>
         <button type="button" class="boton" id="pv-guardar">Guardar y entrar</button>
         <div class="aviso" id="pv-aviso" hidden></div>
       </div>
@@ -257,9 +273,12 @@
           <div class="botones" style="gap:10px">
             <div class="campo"><label for="a-encargada">Nombre de la encargada</label><input id="a-encargada" autocomplete="off"></div>
             <div class="campo"><label for="a-clave">Contraseña nueva de la encargada</label><input id="a-clave" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+            <div class="campo" data-actual="a-clave" hidden><label for="a-actual">Contraseña actual de la encargada</label><input id="a-actual" type="password" autocomplete="current-password"></div>
             <div class="campo"><label for="a-suplente">Nombre de la suplente (opcional)</label><input id="a-suplente" placeholder="Ejemplo: Ana María" autocomplete="off"></div>
             <div class="campo"><label for="a-clave-s">Contraseña nueva de la suplente</label><input id="a-clave-s" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+            <div class="campo" data-actual="a-clave-s" hidden><label for="a-actual-s">Contraseña actual de la suplente (si ya tenía)</label><input id="a-actual-s" type="password" autocomplete="off"></div>
             <div class="campo"><label for="a-clave-m">Contraseña nueva de los miembros (para ver lo suyo)</label><input id="a-clave-m" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+            <div class="campo" data-actual="a-clave-m" hidden><label for="a-actual-m">Contraseña actual de los miembros</label><input id="a-actual-m" type="password" autocomplete="off"></div>
           </div>
           <p class="gris" style="margin:8px 0 0">Sin la contraseña nadie ve nada. La de los miembros solo deja mirar; con la de la encargada (o la suplente) se anota y se cambia todo, y queda anotado quién hizo cada cosa.</p>
         </div>
@@ -278,6 +297,7 @@
         </div>
         <div class="tarjeta"><h3>Los datos</h3>
           <div id="a-datos" class="gris" style="font-size:13px"></div>
+          <div id="a-nube" class="botones" style="margin-top:10px"></div>
           <div class="botones" style="margin-top:10px">
             <button type="button" class="boton sec chico" id="a-copia">Guardar una copia de todo (respaldo)</button>
             <button type="button" class="boton sec chico" id="a-recuperar">Recuperar desde una copia</button>

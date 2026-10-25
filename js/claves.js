@@ -20,5 +20,5 @@ export async function coincide(clave, guardada) {
   return (await huella(clave, guardada.sal)) === guardada.huella;
 }
 
-/** Las contraseñas tienen que tener al menos 4 letras o números. */
-export function sirve(clave) { return String(clave || "").trim().length >= 4; }
+/** Las contraseñas tienen que tener al menos 4 letras o números (6 con la nube, porque Firebase lo pide). */
+export function sirve(clave, minimo = 4) { return String(clave || "").trim().length >= minimo; }
