@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fondo Familiar</title>
+  <meta name="description" content="Fondo Familiar: cuotas, pagos, salidas y préstamos del seguro familiar. Desarrollado por BAWIL COMPUSERVICE.">
+  <meta name="theme-color" content="#1f7a5c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="iconos/icono-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Fondo Familiar">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div class="franja nueva" id="franja-nueva" hidden>✨ Hay una versión nueva del programa <button type="button" id="actualizar">Actualizar</button></div>
+  <div class="franja sin" id="franja-sin" hidden>📵 <span id="franja-sin-txt">Sin internet · lo que anotes se guarda en el celular</span></div>
+
+  <div class="vistas">
+
+    <!-- CARGANDO -->
+    <section class="vista" id="v-cargando">
+      <div class="cuerpo centro"><div class="ficha-cab"><img src="iconos/icono-192.png" alt="" width="88" height="88" style="border-radius:22px"><div class="n">Fondo Familiar</div><div class="t">Abriendo…</div></div></div>
+    </section>
+
+    <!-- ACTIVAR (licencia como ARQUEO) -->
+    <section class="vista" id="v-activar" hidden>
+      <div class="cab"><div class="crece"><h2>Activar Fondo Familiar</h2><span class="sub">la primera vez que se abre</span></div></div>
+      <div class="cuerpo">
+        <p style="margin:0;font-size:14px">Este programa necesita una clave para usarse con este fondo.</p>
+        <div class="tarjeta"><h3>Código del fondo</h3>
+          <div class="codigo" id="l-codigo">…</div>
+          <div class="botones fila-b" style="margin-top:10px">
+            <button type="button" class="boton sec chico auto" id="l-copiar">Copiar código</button>
+            <a class="boton wa chico auto" id="l-wa" target="_blank" rel="noopener">Enviar el código por WhatsApp</a>
+          </div>
+          <p class="gris" style="margin:8px 0 0">Se le manda este código a BAWIL por WhatsApp; él saca la clave con su Generador de licencias (escogiendo «Fondo Familiar» en la lista) y te la manda.</p>
+        </div>
+        <div class="campo"><label for="l-clave">Clave de activación</label><input id="l-clave" placeholder="Pega aquí la clave que te mandó BAWIL" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+        <button type="button" class="boton" id="l-activar">Activar</button>
+        <div class="aviso" id="l-aviso">Sin la clave el programa no abre. La clave sirve solo para este fondo (este código), como en ARQUEO sirve solo para esa computadora.</div>
+        <button type="button" class="boton sec chico" id="l-copia">¿Ya tenías el fondo en otro aparato? Recuperar una copia</button>
+        <p class="firma" data-firma></p>
+      </div>
+    </section>
+
+    <!-- PRIMERA VEZ -->
+    <section class="vista" id="v-primera" hidden>
+      <div class="cab"><div class="crece"><h2>Primera vez</h2><span class="sub">las contraseñas y la cuota del fondo</span></div></div>
+      <div class="cuerpo">
+        <div class="aviso">✓ Activado. Ahora pon las contraseñas para entrar. Después se pueden cambiar en Ajustes.</div>
+        <div class="campo"><label for="pv-nombre">Nombre del fondo</label><input id="pv-nombre" value="Fondo Familiar"></div>
+        <div class="campo"><label for="pv-encargada">Nombre de la encargada</label><input id="pv-encargada" placeholder="Ejemplo: Yokasta" autocomplete="off"></div>
+        <div class="campo"><label for="pv-clave">Contraseña de la encargada</label><input id="pv-clave" type="password" autocomplete="new-password"><span class="ayuda">Al menos 4 letras o números. Con esta se anota y se cambia todo.</span></div>
+        <div class="campo"><label for="pv-clave-m">Contraseña de los miembros (para ver lo suyo)</label><input id="pv-clave-m" type="password" autocomplete="new-password"></div>
+        <div class="campo"><label for="pv-cuota">Cuota por quincena</label><input id="pv-cuota" value="500" inputmode="numeric"></div>
+        <button type="button" class="boton" id="pv-guardar">Guardar y entrar</button>
+        <div class="aviso" id="pv-aviso" hidden></div>
+      </div>
+    </section>
+
+    <!-- ENTRAR -->
+    <section class="vista" id="v-entrar" hidden>
+      <div class="cab"><div class="crece"><h2 data-nombre-fondo>Fondo Familiar</h2><span class="sub">escribe tu contraseña para entrar</span></div></div>
+      <div class="cuerpo centro">
+        <div class="ficha-cab"><div class="foto grande" style="--c:#1f7a5c;font-size:38px">🔒</div><div class="n">Entrar</div><div class="t">Escribe tu contraseña para ver el fondo</div></div>
+        <div class="campo"><label for="e-quien">¿Quién eres?</label><select id="e-quien"></select></div>
+        <div class="campo"><label for="e-clave">Contraseña</label><input id="e-clave" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+        <button type="button" class="boton" id="e-entrar">Entrar</button>
+        <div class="aviso" id="e-aviso">La encargada entra con su contraseña y puede todo. Un miembro entra con la contraseña de los miembros y solo ve lo suyo: qué debe y cuánto hay en el fondo. El aparato se queda abierto hasta que se cierre la sesión.</div>
+        <button type="button" class="boton sec chico" data-instalar hidden>📲 Poner el icono en la pantalla</button>
+        <p class="firma" data-firma></p>
+      </div>
+    </section>
+
+    <!-- INICIO -->
+    <section class="vista" id="v-inicio" hidden>
+      <div class="cab"><div class="crece"><h2 data-nombre-fondo>Fondo Familiar</h2><span class="sub" id="i-fecha"></span></div><button type="button" class="mas" data-ir="pago">+ Pago</button><button type="button" class="mas salida" data-ir="salida">− Salida</button></div>
+      <div class="cuerpo">
+        <button type="button" class="banner" id="banner" aria-label="Publicidad de BAWIL COMPUSERVICE"></button>
+        <div class="tarjeta fondo"><h3>En el fondo</h3><div class="monto" id="i-total">RD$0</div>
+          <div class="dos partes">
+            <div class="parte"><div class="e">💵 En efectivo</div><div class="v" id="i-efectivo">RD$0</div></div>
+            <div class="parte"><div class="e">🏦 Por transferencia</div><div class="v" id="i-transf">RD$0</div></div>
+          </div>
+          <div class="nota" id="i-prox"></div></div>
+        <div class="tarjeta" id="i-tareas" hidden><h3>Para hoy</h3><div class="lista" id="i-tareas-lista"></div></div>
+        <div class="tarjeta" id="i-esperan" hidden><h3>Salidas esperando «de acuerdo»</h3><div class="lista" id="i-esperan-lista"></div></div>
+        <div class="dos">
+          <div class="tarjeta"><h3>Al día</h3><div class="num dia" id="i-n-dia">0</div><div class="gris">miembros</div></div>
+          <div class="tarjeta"><h3>Deben</h3><div class="num debe" id="i-n-debe">0</div><div class="gris" id="i-t-debe">RD$0 en total</div></div>
+        </div>
+        <div class="tarjeta"><h3>Quién debe</h3><div class="lista" id="i-deben"></div>
+          <button type="button" class="boton sec chico" style="margin-top:8px" data-ir="recordar">🔔 Recordarles a los que deben</button>
+        </div>
+        <div class="tarjeta"><h3>Últimos movimientos</h3><div class="lista" id="i-ultimos"></div></div>
+      </div>
+    </section>
+
+    <!-- RECORDAR -->
+    <section class="vista" id="v-recordar" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="inicio" aria-label="Volver">‹</button><h2 class="chico">Recordarles a los que deben</h2></div>
+      <div class="cuerpo">
+        <div class="aviso">Toca el botón verde de cada uno: se abre WhatsApp con el recordatorio ya escrito para su número y solo le das enviar.</div>
+        <div class="tarjeta"><div class="lista" id="r-lista"></div></div>
+        <a class="boton sec chico" id="r-grupo" target="_blank" rel="noopener">Mandar la lista de los que deben a un grupo de WhatsApp</a>
+      </div>
+    </section>
+
+    <!-- SALIDA -->
+    <section class="vista" id="v-salida" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="inicio" aria-label="Volver">‹</button><h2 class="chico">Retirar dinero del fondo</h2></div>
+      <div class="cuerpo">
+        <div class="tarjeta fina"><div class="gris" style="font-size:13px">Hay en el fondo</div><div style="font-weight:800;font-variant-numeric:tabular-nums" id="s-hay"></div></div>
+        <div class="campo"><label for="s-quien">¿Para quién?</label><select id="s-quien"></select></div>
+        <div class="campo"><label for="s-motivo">¿Para qué?</label><select id="s-motivo"><option>Enfermedad (consulta, hospital)</option><option>Medicina</option><option>Emergencia</option><option value="otra">Otra cosa (la escribo abajo)</option></select></div>
+        <div class="campo" id="s-otra-campo" hidden><label for="s-otra">¿Para qué es?</label><input id="s-otra" placeholder="Ejemplo: funeral, análisis, transporte"></div>
+        <div class="campo"><label for="s-monto">Cantidad</label><input id="s-monto" inputmode="numeric" placeholder="Ejemplo: 3000"></div>
+        <div class="campo"><label for="s-de">¿De dónde sale?</label><select id="s-de"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option></select></div>
+        <div class="campo"><label for="s-fecha">Fecha</label><input id="s-fecha" type="date"></div>
+        <div class="campo"><label for="s-nota">Nota (opcional)</label><input id="s-nota" placeholder="Ejemplo: receta del Dr. Peña, farmacia Carol"></div>
+        <div style="display:flex;gap:10px;align-items:center"><img class="miniatura" id="s-foto-ver" alt="Foto de la factura" hidden><button type="button" class="boton sec" id="s-foto">📎 Poner foto de la factura o la receta</button></div>
+        <button type="button" class="boton rojo" id="s-guardar">Guardar la salida</button>
+        <div class="aviso" id="s-aviso"></div>
+        <div class="tarjeta" id="s-avisar" hidden><h3>Avisar a todos</h3><div class="gris" id="s-avisar-txt" style="margin-bottom:8px"></div>
+          <div class="botones"><a class="boton wa chico" id="s-avisar-grupo" target="_blank" rel="noopener">Mandar el aviso a un grupo de WhatsApp</a><button type="button" class="boton sec chico" data-ir="historial">Listo</button></div></div>
+      </div>
+    </section>
+
+    <!-- MIEMBROS -->
+    <section class="vista" id="v-miembros" hidden>
+      <div class="cab"><div class="crece"><h2>Miembros</h2><span class="sub" id="m-cuantos"></span></div><button type="button" class="mas" id="m-agregar">+ Agregar</button></div>
+      <div class="cuerpo"><div class="tarjeta"><div class="lista" id="m-lista"></div></div>
+        <button type="button" class="boton sec chico" id="m-ver-bajas" hidden>Ver los dados de baja</button></div>
+    </section>
+
+    <!-- FICHA -->
+    <section class="vista" id="v-ficha" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="miembros" aria-label="Volver" id="f-atras">‹</button><h2 class="chico" id="f-titulo">Miembro</h2><button type="button" class="mas" id="f-editar" style="background:var(--panel);color:var(--fg);border:1px solid var(--borde)">Editar</button><button type="button" class="mas" id="f-salir" hidden style="background:var(--panel);color:var(--fg);border:1px solid var(--borde)">Cerrar sesión</button></div>
+      <div class="cuerpo">
+        <div class="tarjeta fondo" id="f-fondo" hidden><h3>En el fondo</h3><div class="monto" id="f-fondo-total"></div><div class="nota" id="f-fondo-prox"></div></div>
+        <div class="ficha-cab"><div class="foto grande" id="f-foto"></div><div class="n" id="f-nombre"></div><div class="t" id="f-tel"></div></div>
+        <div class="aviso" id="f-cuota" style="text-align:center"></div>
+        <div class="tarjeta resumen"><div><h3 style="margin-bottom:2px" id="f-debe-t">Debe</h3><div class="g" id="f-debe"></div></div><span class="chip" id="f-chip"></span></div>
+        <div class="tarjeta"><h3 id="f-quinc-t">Sus quincenas</h3><div class="quinc" id="f-quinc"></div><p class="gris" style="margin:10px 0 0">Cada fecha que no se paga se queda en rojo y se suma. Al pagar, se van tachando las más viejas primero.</p></div>
+        <div class="botones" id="f-acciones">
+          <button type="button" class="boton" id="f-pagar">Anotar un pago</button>
+          <a class="boton wa chico" id="f-recordar" target="_blank" rel="noopener" hidden>Recordarle por WhatsApp</a>
+        </div>
+        <div class="tarjeta" id="f-esperan" hidden><h3>Salidas que esperan tu «de acuerdo»</h3><div class="lista" id="f-esperan-lista"></div></div>
+        <div class="tarjeta"><h3>Préstamo del fondo</h3><div id="f-prestamo"></div><button type="button" class="boton sec chico" style="margin-top:10px" id="f-prestar">Prestarle del fondo</button></div>
+        <div class="tarjeta"><h3>Pagos anotados</h3><div class="lista" id="f-pagos"></div></div>
+        <p class="firma" data-firma id="f-firma" hidden></p>
+      </div>
+    </section>
+
+    <!-- PAGO -->
+    <section class="vista" id="v-pago" hidden>
+      <div class="cab"><button type="button" class="atras" data-volver aria-label="Volver">‹</button><h2 class="chico">Anotar pago</h2></div>
+      <div class="cuerpo">
+        <div id="p-formulario" class="botones" style="gap:12px">
+          <div class="campo"><label for="p-quien">¿Quién paga?</label><select id="p-quien"></select></div>
+          <div class="tarjeta fina"><div class="gris" style="font-size:13px">Hoy debe</div><div style="font-weight:800" id="p-debe"></div></div>
+          <div class="campo"><span class="e">¿Cuántas quincenas paga?</span><div class="opciones-pago" id="p-cuantas"></div></div>
+          <div class="campo"><label for="p-fecha">Fecha</label><input id="p-fecha" type="date"></div>
+          <div class="campo"><label for="p-como">¿Cómo pagó?</label><select id="p-como"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option></select></div>
+          <label class="marca" id="p-prestamo-marca" hidden><input type="checkbox" id="p-prestamo" checked><span id="p-prestamo-txt"></span></label>
+          <div class="aviso" id="p-total"></div>
+          <div style="display:flex;gap:10px;align-items:center"><img class="miniatura" id="p-foto-ver" alt="Foto del comprobante" hidden><button type="button" class="boton sec" id="p-foto">📎 Poner foto del comprobante (si fue transferencia)</button></div>
+          <button type="button" class="boton" id="p-guardar">Guardar el pago</button>
+          <div class="aviso mal" id="p-error" hidden></div>
+        </div>
+        <div id="p-hecho" hidden class="botones" style="gap:12px">
+          <div class="aviso ok" id="p-aviso"></div>
+          <div class="tarjeta"><h3>Recibo</h3>
+            <div class="texto-recibo" id="p-recibo-txt"></div>
+            <div class="botones" style="margin-top:10px">
+              <a class="boton wa" id="p-wa" target="_blank" rel="noopener">Enviar recibo por WhatsApp</a>
+              <button type="button" class="boton sec" id="p-listo">Listo, sin enviar</button>
+            </div>
+            <p class="gris" style="margin:8px 0 0">Abre WhatsApp con el recibo ya escrito para el número del miembro; solo le das enviar. Si no tiene teléfono anotado, WhatsApp deja escoger el chat.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AGREGAR / EDITAR MIEMBRO -->
+    <section class="vista" id="v-nuevo" hidden>
+      <div class="cab"><button type="button" class="atras" data-volver aria-label="Volver">‹</button><h2 class="chico" id="n-titulo">Agregar miembro</h2></div>
+      <div class="cuerpo">
+        <div class="ficha-cab"><div class="foto grande vacia" id="n-foto">📷</div><button type="button" class="boton sec chico auto" id="n-foto-btn">Poner foto (cámara o galería)</button></div>
+        <div class="campo"><label for="n-nombre">Nombre</label><input id="n-nombre" placeholder="Ejemplo: Yosmery" autocomplete="off"></div>
+        <div class="campo"><label for="n-tel">Teléfono (WhatsApp)</label><input id="n-tel" placeholder="809-000-0000" inputmode="tel" autocomplete="off"></div>
+        <div class="campo"><label for="n-cuota">Cuota por quincena</label><input id="n-cuota" inputmode="numeric"></div>
+        <div class="campo"><label for="n-desde">Empieza a pagar desde</label><select id="n-desde"></select></div>
+        <button type="button" class="boton" id="n-guardar">Guardar miembro</button>
+        <div class="aviso" id="n-aviso">Se pueden agregar los que quieran entrar, sin límite. Cada uno queda con su foto, su nombre y su teléfono.</div>
+        <button type="button" class="boton sec chico" id="n-baja" hidden>Dar de baja (sale de la lista, su historial se queda)</button>
+      </div>
+    </section>
+
+    <!-- PRÉSTAMO -->
+    <section class="vista" id="v-prestamo" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="ficha" aria-label="Volver">‹</button><h2 class="chico">Préstamo del fondo</h2></div>
+      <div class="cuerpo">
+        <div class="tarjeta fina"><div class="gris" style="font-size:13px">Para</div><div style="font-weight:800" id="pr-quien"></div></div>
+        <div class="campo"><label for="pr-monto">¿Cuánto se le presta?</label><input id="pr-monto" inputmode="numeric" placeholder="Ejemplo: 3000"></div>
+        <div class="campo"><label for="pr-cuotas">¿En cuántas quincenas lo devuelve?</label><select id="pr-cuotas"><option>2</option><option>4</option><option selected>6</option><option>8</option><option>10</option><option>12</option></select></div>
+        <div class="campo"><label for="pr-de">¿De dónde sale?</label><select id="pr-de"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option></select></div>
+        <div class="campo"><label for="pr-fecha">Fecha</label><input id="pr-fecha" type="date"></div>
+        <div class="aviso" id="pr-calc"></div>
+        <button type="button" class="boton" id="pr-guardar">Guardar el préstamo</button>
+        <div class="aviso" id="pr-aviso">El préstamo sale del fondo como una salida y se va devolviendo con los pagos: cada quincena, al anotar su cuota, el programa suma también la parte del préstamo. En su ficha se ve cuánto le falta.</div>
+      </div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section class="vista" id="v-historial" hidden>
+      <div class="cab"><div class="crece"><h2>Historial</h2><span class="sub">todo lo que ha entrado y salido del fondo</span></div></div>
+      <div class="cuerpo">
+        <div class="dos">
+          <div class="tarjeta"><h3>Entró</h3><div class="num dia" id="h-entro">RD$0</div></div>
+          <div class="tarjeta"><h3>Salió</h3><div class="num debe" id="h-salio">RD$0</div></div>
+        </div>
+        <div class="campo"><label for="h-filtro">Mostrar</label><select id="h-filtro"><option value="todo">Todo</option><option value="pago">Solo lo que entró (pagos)</option><option value="sale">Solo lo que salió (salidas y préstamos)</option></select></div>
+        <div class="tarjeta"><div class="lista" id="h-lista"></div></div>
+      </div>
+    </section>
+
+    <!-- UN MOVIMIENTO -->
+    <section class="vista" id="v-movimiento" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="historial" aria-label="Volver">‹</button><h2 class="chico" id="mv-titulo">Movimiento</h2></div>
+      <div class="cuerpo">
+        <div class="tarjeta"><div class="texto-recibo" id="mv-txt"></div></div>
+        <img class="comprobante" id="mv-foto" alt="Foto adjunta" hidden>
+        <div class="botones" id="mv-botones"></div>
+        <div class="aviso" id="mv-aviso" hidden></div>
+      </div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="vista" id="v-ajustes" hidden>
+      <div class="cab"><div class="crece"><h2>Ajustes</h2><span class="sub">las reglas del fondo</span></div></div>
+      <div class="cuerpo">
+        <div class="campo"><label for="a-nombre">Nombre del fondo</label><input id="a-nombre"></div>
+        <div class="campo"><label for="a-cuota">Cuota por quincena (la de los miembros nuevos)</label><input id="a-cuota" inputmode="numeric"></div>
+        <div class="campo"><label for="a-frecuencia">Días de pago</label><select id="a-frecuencia"><option value="quincenal">Cada quincena (dos días al mes)</option><option value="semanal">Cada semana</option><option value="mensual">Una vez al mes</option></select></div>
+        <div class="dos" id="a-dias-q"><div class="campo"><label for="a-dia1">Primer día</label><select id="a-dia1"></select></div><div class="campo"><label for="a-dia2">Segundo día</label><select id="a-dia2"></select></div></div>
+        <div class="campo" id="a-dias-s" hidden><label for="a-dia-semana">¿Qué día de la semana?</label><select id="a-dia-semana"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
+        <div class="campo" id="a-dias-m" hidden><label for="a-dia-mes">¿Qué día del mes?</label><select id="a-dia-mes"></select></div>
+        <div class="tarjeta"><h3>Contraseñas para entrar</h3>
+          <div class="botones" style="gap:10px">
+            <div class="campo"><label for="a-encargada">Nombre de la encargada</label><input id="a-encargada" autocomplete="off"></div>
+            <div class="campo"><label for="a-clave">Contraseña nueva de la encargada</label><input id="a-clave" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+            <div class="campo"><label for="a-suplente">Nombre de la suplente (opcional)</label><input id="a-suplente" placeholder="Ejemplo: Ana María" autocomplete="off"></div>
+            <div class="campo"><label for="a-clave-s">Contraseña nueva de la suplente</label><input id="a-clave-s" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+            <div class="campo"><label for="a-clave-m">Contraseña nueva de los miembros (para ver lo suyo)</label><input id="a-clave-m" type="password" placeholder="(déjala vacía para no cambiarla)" autocomplete="new-password"></div>
+          </div>
+          <p class="gris" style="margin:8px 0 0">Sin la contraseña nadie ve nada. La de los miembros solo deja mirar; con la de la encargada (o la suplente) se anota y se cambia todo, y queda anotado quién hizo cada cosa.</p>
+        </div>
+        <div class="tarjeta"><h3>Reglas para retirar</h3>
+          <div class="botones" style="gap:10px">
+            <div class="campo"><label for="a-tope">Hasta cuánto sale sin avisar</label><input id="a-tope" inputmode="numeric"></div>
+            <div class="campo"><label for="a-mas">Si es más que eso</label><select id="a-mas"><option value="avisar">Avisar a todos los miembros antes de sacarlo</option><option value="acuerdo">Que digan «de acuerdo» la mitad de los miembros</option><option value="directo">Sacar directo (sin regla)</option></select></div>
+          </div>
+        </div>
+        <button type="button" class="boton" id="a-guardar">Guardar los cambios</button>
+        <div class="aviso" id="a-aviso" hidden></div>
+        <button type="button" class="boton sec" data-ir="avisos">🔔 Avisos y recordatorios</button>
+        <div class="tarjeta"><h3>Cierre de mes</h3>
+          <div class="campo" style="margin-bottom:8px"><label for="a-cierre">Recordarme el resumen del mes</label><select id="a-cierre"><option value="si">El día 1, para mandarlo a todos por WhatsApp</option><option value="no">No recordar</option></select></div>
+          <button type="button" class="boton sec chico" data-ir="resumen">Ver el resumen del mes (y sacar el PDF)</button>
+        </div>
+        <div class="tarjeta"><h3>Los datos</h3>
+          <div id="a-datos" class="gris" style="font-size:13px"></div>
+          <div class="botones" style="margin-top:10px">
+            <button type="button" class="boton sec chico" id="a-copia">Guardar una copia de todo (respaldo)</button>
+            <button type="button" class="boton sec chico" id="a-recuperar">Recuperar desde una copia</button>
+          </div>
+        </div>
+        <div class="tarjeta"><h3>Icono del programa</h3>
+          <div class="gris" style="font-size:13px" id="a-icono-txt"></div>
+          <button type="button" class="boton sec chico" style="margin-top:10px" data-instalar hidden>📲 Poner el icono en la pantalla</button>
+        </div>
+        <div class="tarjeta"><h3>Licencia</h3>
+          <div class="resumen"><div><div style="font-weight:800">Activada ✓</div><div class="gris" id="a-licencia"></div></div><span class="chip dia">Al día</span></div>
+        </div>
+        <div class="tarjeta"><h3>Acerca del programa</h3>
+          <div style="font-weight:800" id="a-version">Fondo Familiar v1.0</div>
+          <div class="gris" style="font-size:13px">Desarrollado por BAWIL COMPUSERVICE · © 2026</div>
+          <div class="gris" style="font-size:13px;margin-top:4px">Soporte y otros programas: WhatsApp 829-696-3495</div>
+          <a class="boton sec chico" style="margin-top:10px" id="a-bawil" target="_blank" rel="noopener">Escribirle a BAWIL por WhatsApp</a>
+        </div>
+        <button type="button" class="boton sec" id="a-salir">Cerrar sesión</button>
+      </div>
+    </section>
+
+    <!-- AVISOS -->
+    <section class="vista" id="v-avisos" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="ajustes" aria-label="Volver">‹</button><h2 class="chico">Avisos y recordatorios</h2></div>
+      <div class="cuerpo">
+        <div class="tarjeta"><h3>A los miembros</h3><div class="lista">
+          <label class="fila marca"><div class="txt"><div class="nom">El día de la quincena</div><div class="det">«Hoy toca la cuota del Fondo Familiar»</div></div><input type="checkbox" data-aviso="diaPago"></label>
+          <label class="fila marca"><div class="txt"><div class="nom">A los que deben</div><div class="det">Al día siguiente y cada semana hasta que paguen: «Debes 3 quincenas (RD$1,500)»</div></div><input type="checkbox" data-aviso="deben"></label>
+          <label class="fila marca"><div class="txt"><div class="nom">Cuando se anota su pago</div><div class="det">Le llega su recibo (botón de WhatsApp al guardar)</div></div><input type="checkbox" data-aviso="recibo"></label>
+        </div></div>
+        <div class="tarjeta"><h3>A la encargada</h3><div class="lista">
+          <label class="fila marca"><div class="txt"><div class="nom">Cuando entra dinero</div><div class="det">«Ana María pagó RD$500 por transferencia» (cuando lo anota la suplente en otro aparato)</div></div><input type="checkbox" data-aviso="entraDinero"></label>
+          <label class="fila marca"><div class="txt"><div class="nom">El día después de la quincena</div><div class="det">«Faltan por pagar: Luisanni y Carlos»</div></div><input type="checkbox" data-aviso="faltan"></label>
+        </div></div>
+        <div class="campo"><label for="av-canal">¿Por dónde llegan?</label><select id="av-canal"><option value="ambos">Notificación en el celular y WhatsApp</option><option value="notificacion">Solo notificación en el celular</option><option value="whatsapp">Solo WhatsApp</option></select></div>
+        <div class="campo"><label for="av-hora">¿A qué hora?</label><select id="av-hora"><option value="7">7:00 de la mañana</option><option value="9">9:00 de la mañana</option><option value="12">12:00 del mediodía</option><option value="18">6:00 de la tarde</option></select></div>
+        <button type="button" class="boton" id="av-permiso">Permitir los avisos en este aparato</button>
+        <button type="button" class="boton sec" id="av-probar">Ver cómo llega el aviso</button>
+        <div class="aviso" id="av-aviso">Los avisos salen en el aparato de cada uno cuando abre el programa (o lo tiene abierto) a partir de la hora escogida. Los de WhatsApp el programa los deja escritos en el Inicio («Para hoy») y se mandan con un toque.</div>
+      </div>
+    </section>
+
+    <!-- RESUMEN DEL MES -->
+    <section class="vista" id="v-resumen" hidden>
+      <div class="cab"><button type="button" class="atras" data-ir="ajustes" aria-label="Volver">‹</button><h2 class="chico">Resumen del mes</h2></div>
+      <div class="cuerpo">
+        <div class="campo"><label for="rs-mes">¿Qué mes?</label><select id="rs-mes"></select></div>
+        <div class="tarjeta"><div class="texto-recibo" id="rs-txt"></div></div>
+        <a class="boton wa" id="rs-wa" target="_blank" rel="noopener">Mandarlo a todos por WhatsApp (a un grupo)</a>
+        <button type="button" class="boton sec" id="rs-pdf">Sacar el PDF (o imprimir)</button>
+        <div class="aviso">Para el PDF: en la ventana que sale escoge «Guardar como PDF».</div>
+      </div>
+    </section>
+
+  </div>
+
+  <nav class="pestanas" id="pestanas" aria-label="Pestañas" hidden>
+    <button type="button" class="pestana" data-ir="inicio" aria-pressed="true"><span class="ic">🏠</span>Inicio</button>
+    <button type="button" class="pestana" data-ir="miembros" aria-pressed="false"><span class="ic">👥</span>Miembros</button>
+    <button type="button" class="pestana" data-ir="historial" aria-pressed="false"><span class="ic">🧾</span>Historial</button>
+    <button type="button" class="pestana" data-ir="ajustes" aria-pressed="false"><span class="ic">⚙️</span>Ajustes</button>
+  </nav>
+</div>
+
+<div class="notif" id="notif" hidden role="status"><span class="n-ic">💚</span><div><div class="n-tit">Fondo Familiar · ahora</div><div id="notif-txt"></div></div></div>
+<div id="hoja-imprimir"></div>
+
+<script type="module" src="js/principal.js"></script>
+</body>
+</html>
